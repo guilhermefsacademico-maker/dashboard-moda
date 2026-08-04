@@ -354,14 +354,14 @@ elif pagina == "📊 Dashboard Interativo":
         )
 st.divider()
 
-st.header("Conclusão")
+st.subheader("Conclusão")
 
-st.markdown("""
+st.write("""
+O presente estudo analisou a relação entre moda, identidade e comportamento de consumo utilizando dados da plataforma Kaggle e técnicas de análise em Python. Os resultados demonstraram que o vestuário desempenha um papel importante na construção da identidade, sendo utilizado não apenas para atender necessidades funcionais, mas também como forma de expressar personalidade, valores e estilo de vida.
 
-O presente estudo analisou a relação entre moda, identidade e comportamento de consumo por meio de dados secundários obtidos na plataforma Kaggle. As análises estatísticas demonstraram que o vestuário exerce um papel que vai além da sua função utilitária, sendo utilizado como forma de expressão da identidade e da personalidade dos indivíduos.
+As análises evidenciaram que os participantes procuram equilibrar estética e funcionalidade em suas escolhas de vestuário, indicando que o processo de decisão de compra envolve fatores práticos e simbólicos. Além disso, observou-se que a maioria realiza compras de maneira planejada, sugerindo um comportamento de consumo mais consciente.
 
-Os resultados evidenciaram um equilíbrio entre aspectos estéticos e funcionais nas escolhas dos participantes, indicando que o consumidor contemporâneo busca conciliar conforto, praticidade e representação de valores pessoais. Além disso, observou-se predominância de um comportamento de compra planejado, caracterizado por aquisições realizadas em intervalos maiores, sugerindo um consumo mais consciente.
+Também foi identificada a predominância do estilo casual entre os respondentes, refletindo a preferência por peças versáteis e confortáveis para o cotidiano. As diferenças entre os gêneros mostraram-se pouco significativas, indicando padrões de consumo semelhantes na amostra analisada.
 
-Também foi identificada a predominância do estilo casual entre os participantes, reforçando a valorização de peças versáteis e adaptáveis ao cotidiano. As diferenças entre os gêneros mostraram-se pouco expressivas, indicando padrões de consumo semelhantes na amostra analisada.
-
-Por fim, conclui-se que a integração entre ciência de dados e estudos de moda possibilita compreender de maneira mais objetiva o comportamento do consumidor. A utilização de ferramentas como Python, Pandas, Matplotlib e Streamlit demonstrou ser eficiente para transformar dados em informações relevantes, contribuindo para pesquisas na área de moda, marketing e comportamento do consumidor
+Por fim, conclui-se que a utilização de ferramentas como Python, Pandas, Matplotlib e Streamlit permitiu transformar dados em informações relevantes para compreender o comportamento do consumidor de moda. A integração entre ciência de dados e estudos de moda mostrou-se eficiente para apoiar análises quantitativas e ampliar a compreensão sobre identidade e consumo.
+""")
