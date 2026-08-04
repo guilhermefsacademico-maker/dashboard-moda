@@ -5,10 +5,10 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 # ==============================================================================
-# CONFIGURAÇÃO DA PÁGINA STREAMLIT
+# 1. CONFIGURAÇÃO GLOBAL DA PÁGINA STREAMLIT
 # ==============================================================================
 st.set_page_config(
-    page_title="Moda, Identidade e Personalidade",
+    page_title="Moda & Personalidade - UFPB",
     page_icon="👔",
     layout="wide"
 )
@@ -17,14 +17,10 @@ st.set_page_config(
 sns.set_theme(style="whitegrid")
 
 # ==============================================================================
-# PIPELINE DE TRATAMENTO E ENGENHARIA DE DADOS (ETL - SEÇÃO 4.2)
+# 2. PIPELINE DE TRATAMENTO E ENGENHARIA DE DADOS (ETL)
 # ==============================================================================
 @st.cache_data
 def carregar_e_tratar_dados(caminho_ou_arquivo):
-    """
-    Executa a leitura, limpeza estrutural, tradução de variáveis qualitativas 
-    e a criação de atributos derivados conforme a metodologia do projeto.
-    """
     df_raw = pd.read_csv(caminho_ou_arquivo)
     df = df_raw.copy()
 
@@ -140,25 +136,23 @@ def carregar_e_tratar_dados(caminho_ou_arquivo):
         }
     }
 
-    # Aplicação das traduções e preenchimento de termos não mapeados
+    # Aplicação das traduções
     for col, dico in translations_map.items():
         if col in df.columns:
             df[col] = df[col].astype(str).str.strip().map(dico).fillna('Não Informado')
 
-    # Filtragem de segurança para variáveis essenciais
     colunas_criticas = ['Idade', 'Genero', 'Estilo_Diario', 'Paleta_Cores']
     for col in colunas_criticas:
         if col in df.columns:
             df = df[df[col] != 'Não Informado']
 
-    # Garantia de integridade numérica da Nota do Reflexo
     if 'Nota_Reflexo' in df.columns:
         df.dropna(subset=['Nota_Reflexo'], inplace=True)
         df['Nota_Reflexo'] = pd.to_numeric(df['Nota_Reflexo'], errors='coerce')
 
     df.reset_index(drop=True, inplace=True)
 
-    # 3. Engenharia de Atributos Derivados
+    # Engenharia de Atributos Derivados
     df["Nivel_Reflexo"] = np.select(
         [df["Nota_Reflexo"] >= 8, df["Nota_Reflexo"] < 5], 
         ["Alto", "Baixo"], 
@@ -175,162 +169,186 @@ def carregar_e_tratar_dados(caminho_ou_arquivo):
     df["Codigo_Estilo"] = df["Estilo_Diario"].astype("category").cat.codes
     df["Indice_Moda"] = (df["Nota_Reflexo"] * 10 + df["Codigo_Genero"] + df["Codigo_Estilo"])
 
-    # Limpeza final de colunas não informadas
     cols_para_remover = [col for col in df.columns if (df[col] == 'Não Informado').all()]
     df.drop(columns=cols_para_remover, errors='ignore', inplace=True)
 
     return df
 
 # ==============================================================================
-# CARREGAMENTO INICIAL DO DATASET
+# 3. NAVEGAÇÃO NA BARRA LATERAL
 # ==============================================================================
-st.sidebar.title("🛠️ Configurações & Filtros")
-
-arquivo_upload = st.sidebar.file_uploader("Upload do dataset (CSV)", type=["csv"])
-
-if arquivo_upload is not None:
-    df_dados = carregar_e_tratar_dados(arquivo_upload)
-else:
-    try:
-        # Tenta ler o arquivo local por padrão
-        df_dados = carregar_e_tratar_dados("Fashion(Data Points) - Form responses 1.csv")
-    except Exception:
-        st.error("Por favor, faça o upload do arquivo CSV do projeto na barra lateral para prosseguir.")
-        st.stop()
+st.sidebar.title("📌 Navegação do Projeto")
+pagina = st.sidebar.radio("Ir para:", ["🏠 Home (Apresentação)", "📊 Dashboard Interativo"])
 
 # ==============================================================================
-# FILTROS DINÂMICOS NA BARRA LATERAL
+# PÁGINA 1: HOME / APRESENTAÇÃO
 # ==============================================================================
-generos_disponiveis = df_dados['Genero'].unique().tolist()
-estilos_disponiveis = df_dados['Estilo_Diario'].unique().tolist()
-
-generos_selecionados = st.sidebar.multiselect(
-    "Filtrar por Gênero:",
-    options=generos_disponiveis,
-    default=generos_disponiveis
-)
-
-estilos_selecionados = st.sidebar.multiselect(
-    "Filtrar por Estilo Diário:",
-    options=estilos_disponiveis,
-    default=estilos_disponiveis
-)
-
-# Aplicando os filtros ao DataFrame de exibição
-df_filtrado = df_dados[
-    (df_dados['Genero'].isin(generos_selecionados)) &
-    (df_dados['Estilo_Diario'].isin(estilos_selecionados))
-]
-
-# ==============================================================================
-# CABEÇALHO PRINCIPAL DA APLICAÇÃO
-# ==============================================================================
-st.title("👔 Moda como Expressão da Identidade e Reflexo da Personalidade")
-st.markdown("""
-Esta aplicação é a ferramenta interativa de visualização e exploração dos dados quantitativos da pesquisa. 
-Ela permite examinar como o vestuário e as escolhas estéticas atuam na construção da identidade e na manifestação 
-da subjetividade contemporânea.
-""")
-st.divider()
-
-# ==============================================================================
-# ABAS TEMÁTICAS DE NAVEGAÇÃO
-# ==============================================================================
-tab1, tab2, tab3, tab4 = st.tabs([
-    "📊 Visão Geral Descritiva", 
-    "🎨 Estilos & Preferências", 
-    "🧠 Percepção & Personalidade", 
-    "📋 Base Trata (ETL)"
-])
-
-# ------------------------------------------------------------------------------
-# ABA 1: VISÃO GERAL DESCRITIVA
-# ------------------------------------------------------------------------------
-with tab1:
-    st.header("Resumo Estatístico Descritivo (Seção 4.3)")
-    
-    col1, col2, col3, col4 = st.columns(4)
-    col1.metric("Respostas Analisadas", f"{len(df_filtrado)}")
-    col2.metric("Média Nota do Reflexo", f"{df_filtrado['Nota_Reflexo'].mean():.2f} / 10")
-    col3.metric("Estilo Predominante", df_filtrado['Estilo_Diario'].mode()[0] if not df_filtrado.empty else "N/A")
-    col4.metric("Índice Sintético de Moda", f"{df_filtrado['Indice_Moda'].mean():.1f}")
+if pagina == "🏠 Home (Apresentação)":
+    st.title("👔 Identidade e Expressão: A Moda Como Espelho da Personalidade")
+    st.caption("Projeto desenvolvido para a disciplina de TPAE II - UFPB")
     
     st.divider()
     
-    col_g1, col_g2 = st.columns(2)
-    
-    with col_g1:
-        st.subheader("Distribuição da Amostra por Gênero")
-        fig, ax = plt.subplots(figsize=(6, 4))
-        sns.countplot(data=df_filtrado, x='Genero', palette='Set2', ax=ax)
-        ax.set_xlabel("Gênero")
-        ax.set_ylabel("Frequência Absoluta")
-        st.pyplot(fig)
-
-    with col_g2:
-        st.subheader("Categorização do Nível de Reflexo da Personalidade")
-        fig, ax = plt.subplots(figsize=(6, 4))
-        sns.countplot(data=df_filtrado, x='Nivel_Reflexo', order=['Baixo', 'Médio', 'Alto'], palette='Blues_r', ax=ax)
-        ax.set_xlabel("Nível do Reflexo")
-        ax.set_ylabel("Frequência Absoluta")
-        st.pyplot(fig)
-
-# ------------------------------------------------------------------------------
-# ABA 2: ESTILOS & PREFERÊNCIAS
-# ------------------------------------------------------------------------------
-with tab2:
-    st.header("Análise de Preferências Estéticas e Hábitos")
-    
-    col_e1, col_e2 = st.columns(2)
-    
-    with col_e1:
-        st.subheader("Paletas de Cores Mais Frequentadas")
-        fig, ax = plt.subplots(figsize=(6, 4))
-        sns.countplot(data=df_filtrado, y='Paleta_Cores', palette='mako', ax=ax)
-        ax.set_xlabel("Quantidade")
-        ax.set_ylabel("Paleta de Cores")
-        st.pyplot(fig)
-
-    with col_e2:
-        st.subheader("Prioridade de Uso (Estética vs. Funcionalidade)")
-        fig, ax = plt.subplots(figsize=(6, 4))
-        sns.countplot(data=df_filtrado, y='Prioridade_Uso', palette='rocket', ax=ax)
-        ax.set_xlabel("Quantidade")
-        ax.set_ylabel("Prioridade")
-        st.pyplot(fig)
-
-# ------------------------------------------------------------------------------
-# ABA 3: PERCEPÇÃO & PERSONALIDADE
-# ------------------------------------------------------------------------------
-with tab3:
-    st.header("Interseção entre Estilos Diários e Nota do Reflexo")
-    
-    st.markdown("""
-    O gráfico de caixa (*boxplot*) abaixo apresenta a distribuição empírica das avaliações sobre o quanto o vestuário 
-    reflete a personalidade (em escala de 1 a 10) segmentada pelos estilos de roupa cotidianos.
+    st.header("🎯 Sobre o Projeto")
+    st.write("""
+    A moda constitui uma importante forma de comunicação não verbal, desempenhando um papel 
+    significativo na construção da identidade e na expressão da personalidade. Mais do que 
+    atender à necessidade básica de vestir, o vestuário permite que os indivíduos expressem 
+    valores, comportamentos e sentimento de pertencimento social.
     """)
     
-    fig, ax = plt.subplots(figsize=(9, 4.5))
-    sns.boxplot(data=df_filtrado, x='Estilo_Diario', y='Nota_Reflexo', palette='viridis', ax=ax)
-    ax.set_title("Percepção do Reflexo da Personalidade por Categoria de Estilo")
-    ax.set_xlabel("Estilo Diário")
-    ax.set_ylabel("Nota do Reflexo (1 a 10)")
-    st.pyplot(fig)
+    st.header("📌 Problema e Objetivos")
+    st.markdown("""
+    * **Problema de Pesquisa:** De que maneira as escolhas de vestuário, no cenário contemporâneo, expressam os traços de personalidade dos indivíduos?
+    * **Objetivo Geral:** Analisar como a moda atua como forma de expressão da identidade e espelho da personalidade, investigando como as escolhas de vestuário refletem características individuais no público jovem.
+    """)
+    
+    st.divider()
+    
+    st.header("📁 Descrição dos Dados (Dataset)")
+    st.write("""
+    Os dados utilizados nesta pesquisa foram obtidos via plataforma **Kaggle**, reunindo informações 
+    sobre preferências de estilo, hábitos de consumo e características comportamentais.
+    """)
+    
+    col1, col2, col3 = st.columns(3)
+    col1.metric("Origem dos Dados", "Kaggle")
+    col2.metric("Tratamento de Dados", "Python (Pandas)")
+    col3.metric("Foco da Amostra", "Público Jovem")
 
-# ------------------------------------------------------------------------------
-# ABA 4: BASE TRATADA (ETL)
-# ------------------------------------------------------------------------------
-with tab4:
-    st.header("Base de Dados Processada e Enriquecida")
-    st.markdown("Abaixo encontra-se a tabela após as etapas de tradução, limpeza de nulos e engenharia de variáveis:")
+# ==============================================================================
+# PÁGINA 2: DASHBOARD INTERATIVO E ANÁLISES
+# ==============================================================================
+elif pagina == "📊 Dashboard Interativo":
     
-    st.dataframe(df_filtrado, use_container_width=True)
-    
-    # Download do arquivo resultante do processo de ETL
-    csv_dados = df_filtrado.to_csv(index=False).encode('utf-8')
-    st.download_button(
-        label="📥 Baixar Dados Tratados em CSV",
-        data=csv_dados,
-        file_name='dados_moda_tratados.csv',
-        mime='text/csv'
+    # Carregamento do Dataset
+    st.sidebar.divider()
+    st.sidebar.subheader("🛠️ Configurações & Filtros")
+    arquivo_upload = st.sidebar.file_uploader("Upload do dataset (CSV)", type=["csv"])
+
+    if arquivo_upload is not None:
+        df_dados = carregar_e_tratar_dados(arquivo_upload)
+    else:
+        try:
+            # Nome padrão do arquivo no repositório
+            df_dados = carregar_e_tratar_dados("Fashion(Data Points) - Form responses 1.csv")
+        except Exception:
+            st.error("Por favor, faça o upload do arquivo CSV do projeto na barra lateral para carregar os gráficos.")
+            st.stop()
+
+    # Filtros Dinâmicos
+    generos_disponiveis = df_dados['Genero'].unique().tolist()
+    estilos_disponiveis = df_dados['Estilo_Diario'].unique().tolist()
+
+    generos_selecionados = st.sidebar.multiselect(
+        "Filtrar por Gênero:",
+        options=generos_disponiveis,
+        default=generos_disponiveis
     )
+
+    estilos_selecionados = st.sidebar.multiselect(
+        "Filtrar por Estilo Diário:",
+        options=estilos_disponiveis,
+        default=estilos_disponiveis
+    )
+
+    df_filtrado = df_dados[
+        (df_dados['Genero'].isin(generos_selecionados)) &
+        (df_dados['Estilo_Diario'].isin(estilos_selecionados))
+    ]
+
+    # Cabeçalho do Dashboard
+    st.title("📊 Painel de Análise Visual de Dados")
+    st.markdown("Explore os dados quantitativos da pesquisa através das abas temáticas abaixo:")
+    st.divider()
+
+    # Abas Temáticas
+    tab1, tab2, tab3, tab4 = st.tabs([
+        "📊 Visão Geral Descritiva", 
+        "🎨 Estilos & Preferências", 
+        "🧠 Percepção & Personalidade", 
+        "📋 Base Tratada (ETL)"
+    ])
+
+    # ABA 1: VISÃO GERAL
+    with tab1:
+        st.header("Resumo Estatístico Descritivo (Seção 4.3)")
+        
+        col1, col2, col3, col4 = st.columns(4)
+        col1.metric("Respostas Analisadas", f"{len(df_filtrado)}")
+        col2.metric("Média Nota do Reflexo", f"{df_filtrado['Nota_Reflexo'].mean():.2f} / 10" if not df_filtrado.empty else "N/A")
+        col3.metric("Estilo Predominante", df_filtrado['Estilo_Diario'].mode()[0] if not df_filtrado.empty else "N/A")
+        col4.metric("Índice Sintético de Moda", f"{df_filtrado['Indice_Moda'].mean():.1f}" if not df_filtrado.empty else "N/A")
+        
+        st.divider()
+        
+        col_g1, col_g2 = st.columns(2)
+        
+        with col_g1:
+            st.subheader("Distribuição da Amostra por Gênero")
+            fig, ax = plt.subplots(figsize=(6, 4))
+            sns.countplot(data=df_filtrado, x='Genero', palette='Set2', ax=ax)
+            ax.set_xlabel("Gênero")
+            ax.set_ylabel("Frequência Absoluta")
+            st.pyplot(fig)
+
+        with col_g2:
+            st.subheader("Categorização do Nível de Reflexo da Personalidade")
+            fig, ax = plt.subplots(figsize=(6, 4))
+            sns.countplot(data=df_filtrado, x='Nivel_Reflexo', order=['Baixo', 'Médio', 'Alto'], palette='Blues_r', ax=ax)
+            ax.set_xlabel("Nível do Reflexo")
+            ax.set_ylabel("Frequência Absoluta")
+            st.pyplot(fig)
+
+    # ABA 2: ESTILOS & PREFERÊNCIAS
+    with tab2:
+        st.header("Análise de Preferências Estéticas e Hábitos")
+        
+        col_e1, col_e2 = st.columns(2)
+        
+        with col_e1:
+            st.subheader("Paletas de Cores Mais Frequentadas")
+            fig, ax = plt.subplots(figsize=(6, 4))
+            sns.countplot(data=df_filtrado, y='Paleta_Cores', palette='mako', ax=ax)
+            ax.set_xlabel("Quantidade")
+            ax.set_ylabel("Paleta de Cores")
+            st.pyplot(fig)
+
+        with col_e2:
+            st.subheader("Prioridade de Uso (Estética vs. Funcionalidade)")
+            fig, ax = plt.subplots(figsize=(6, 4))
+            sns.countplot(data=df_filtrado, y='Prioridade_Uso', palette='rocket', ax=ax)
+            ax.set_xlabel("Quantidade")
+            ax.set_ylabel("Prioridade")
+            st.pyplot(fig)
+
+    # ABA 3: PERCEPÇÃO & PERSONALIDADE
+    with tab3:
+        st.header("Interseção entre Estilos Diários e Nota do Reflexo")
+        
+        st.markdown("""
+        O gráfico de caixa (*boxplot*) abaixo apresenta a distribuição empírica das avaliações sobre o quanto o vestuário 
+        reflete a personalidade (em escala de 1 a 10) segmentada pelos estilos de roupa cotidianos.
+        """)
+        
+        fig, ax = plt.subplots(figsize=(9, 4.5))
+        sns.boxplot(data=df_filtrado, x='Estilo_Diario', y='Nota_Reflexo', palette='viridis', ax=ax)
+        ax.set_title("Percepção do Reflexo da Personalidade por Categoria de Estilo")
+        ax.set_xlabel("Estilo Diário")
+        ax.set_ylabel("Nota do Reflexo (1 a 10)")
+        st.pyplot(fig)
+
+    # ABA 4: BASE TRATADA
+    with tab4:
+        st.header("Base de Dados Processada e Enriquecida")
+        st.markdown("Abaixo encontra-se a tabela após as etapas de tradução, limpeza de nulos e engenharia de variáveis:")
+        
+        st.dataframe(df_filtrado, use_container_width=True)
+        
+        csv_dados = df_filtrado.to_csv(index=False).encode('utf-8')
+        st.download_button(
+            label="📥 Baixar Dados Tratados em CSV",
+            data=csv_dados,
+            file_name='dados_moda_tratados.csv',
+            mime='text/csv'
+        )
