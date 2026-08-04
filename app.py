@@ -352,3 +352,16 @@ elif pagina == "📊 Dashboard Interativo":
             file_name='dados_moda_tratados.csv',
             mime='text/csv'
         )
+st.divider()
+
+st.header("Conclusão")
+
+st.markdown("""
+
+O presente estudo analisou a relação entre moda, identidade e comportamento de consumo por meio de dados secundários obtidos na plataforma Kaggle. As análises estatísticas demonstraram que o vestuário exerce um papel que vai além da sua função utilitária, sendo utilizado como forma de expressão da identidade e da personalidade dos indivíduos.
+
+Os resultados evidenciaram um equilíbrio entre aspectos estéticos e funcionais nas escolhas dos participantes, indicando que o consumidor contemporâneo busca conciliar conforto, praticidade e representação de valores pessoais. Além disso, observou-se predominância de um comportamento de compra planejado, caracterizado por aquisições realizadas em intervalos maiores, sugerindo um consumo mais consciente.
+
+Também foi identificada a predominância do estilo casual entre os participantes, reforçando a valorização de peças versáteis e adaptáveis ao cotidiano. As diferenças entre os gêneros mostraram-se pouco expressivas, indicando padrões de consumo semelhantes na amostra analisada.
+
+Por fim, conclui-se que a integração entre ciência de dados e estudos de moda possibilita compreender de maneira mais objetiva o comportamento do consumidor. A utilização de ferramentas como Python, Pandas, Matplotlib e Streamlit demonstrou ser eficiente para transformar dados em informações relevantes, contribuindo para pesquisas na área de moda, marketing e comportamento do consumidor
